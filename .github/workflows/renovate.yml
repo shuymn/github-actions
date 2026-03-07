@@ -24,5 +24,7 @@ jobs:
       - name: Validate Renovate config
         env:
           FILES: ${{ inputs.files }}
-        run: bunx --package=renovate renovate-config-validator --strict $FILES
+        run: |
+          read -ra config_files <<< "$FILES"
+          bunx --package=renovate renovate-config-validator --strict "${config_files[@]}"
         shell: bash
