@@ -19,6 +19,14 @@
       "matchStrings": ["GHALINT_VERSION\\s*(?::=|:)\\s+(?<currentValue>v[^\\s\"\\n]+)"],
       "depNameTemplate": "suzuki-shunsuke/ghalint",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update RENOVATE_VERSION in Makefile and renovate.yml",
+      "managerFilePatterns": ["Makefile", ".github/workflows/renovate.yml"],
+      "matchStrings": ["RENOVATE_VERSION\\s*(?::=|:)\\s+\"?(?<currentValue>[^\\s\"\\n]+)\"?"],
+      "depNameTemplate": "renovate",
+      "datasourceTemplate": "npm"
     }
   ]
 }

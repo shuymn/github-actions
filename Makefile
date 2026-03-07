@@ -2,6 +2,7 @@ SHELL := /bin/bash
 
 ACTIONLINT_VERSION := v1.7.11
 GHALINT_VERSION    := v1.5.5
+RENOVATE_VERSION   := 43.56.0
 
 BIN_DIR := bin
 OS      := $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -21,7 +22,7 @@ lint-ghalint: $(BIN_DIR)/.ghalint-$(GHALINT_VERSION)
 	$(GHALINT) run
 
 lint-renovate:
-	bunx --package=renovate renovate-config-validator --strict default.json .github/renovate.json
+	bunx --package=renovate@$(RENOVATE_VERSION) renovate-config-validator --strict default.json .github/renovate.json
 
 $(BIN_DIR)/.actionlint-$(ACTIONLINT_VERSION): | $(BIN_DIR)
 	@rm -f $(ACTIONLINT) $(BIN_DIR)/.actionlint-*

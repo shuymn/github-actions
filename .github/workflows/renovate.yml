@@ -12,6 +12,8 @@ jobs:
   validate:
     permissions:
       contents: read
+    env:
+      RENOVATE_VERSION: "43.56.0"
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
@@ -21,10 +23,15 @@ jobs:
 
       - uses: oven-sh/setup-bun@ecf28ddc73e819eb6fa29df6b34ef8921c743461 # v2.1.3
 
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-renovate-${{ env.RENOVATE_VERSION }}-${{ runner.os }}
+
       - name: Validate Renovate config
         env:
           FILES: ${{ inputs.files }}
         run: |
           read -ra config_files <<< "$FILES"
-          bunx --package=renovate renovate-config-validator --strict "${config_files[@]}"
+          bunx --package=renovate@"${RENOVATE_VERSION:?}" renovate-config-validator --strict "${config_files[@]}"
         shell: bash
