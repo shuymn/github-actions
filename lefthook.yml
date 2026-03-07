@@ -3,7 +3,6 @@ no_tty: false
 
 pre-commit:
   parallel: true
-  piped: true
 
   commands:
     lint:
