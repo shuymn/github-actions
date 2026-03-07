@@ -1,0 +1,56 @@
+name: Lint GitHub Actions workflows
+
+on:
+  workflow_call:
+
+jobs:
+  actionlint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download actionlint
+        id: get_actionlint
+        env:
+          ACTIONLINT_VERSION: v1.7.11
+        run: bash <(curl "https://raw.githubusercontent.com/rhysd/actionlint/refs/tags/${ACTIONLINT_VERSION:?}/scripts/download-actionlint.bash")
+        shell: bash
+
+      - name: Run actionlint
+        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        shell: bash
+
+  ghalint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download ghalint
+        env:
+          GHALINT_VERSION: v1.5.5
+        run: |
+          asset="ghalint_${GHALINT_VERSION#v}_linux_amd64.tar.gz"
+
+          gh release download "${GHALINT_VERSION:?}" \
+            -R suzuki-shunsuke/ghalint \
+            -p "${asset}"
+
+          gh attestation verify "${asset}" \
+            -R suzuki-shunsuke/ghalint \
+            --signer-workflow suzuki-shunsuke/go-release-workflow/.github/workflows/release.yaml
+          tar xvzf "${asset}" ghalint
+        shell: bash
+
+      - name: Run ghalint
+        run: ./ghalint run
+        shell: bash

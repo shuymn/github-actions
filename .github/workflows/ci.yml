@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  gha:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/gha.yml
+
+  renovate:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/renovate.yml
