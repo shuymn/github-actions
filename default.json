@@ -1,0 +1,65 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":timezone(Asia/Tokyo)",
+    "schedule:weekends"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "prHourlyLimit": 0,
+  "minimumReleaseAge": "7 days",
+  "internalChecksAsSuccess": true,
+  "reviewersFromCodeOwners": true,
+  "assignAutomerge": true,
+  "packageRules": [
+    {
+      "description": "Automerge minor/patch updates for non-major versions",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchCurrentVersion": ">=1.0.0",
+      "automerge": true
+    },
+    {
+      "description": "Automerge digest updates for selected GitHub Actions",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "shuymn/github-actions"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "minimumReleaseAge": null,
+      "automerge": true
+    },
+    {
+      "description": "Group .bun-version updates",
+      "matchManagers": [
+        "bun-version"
+      ],
+      "groupName": "bun",
+      "groupSlug": "bun"
+    },
+    {
+      "description": "Group @types/bun updates",
+      "matchPackageNames": [
+        "@types/bun"
+      ],
+      "groupName": "bun",
+      "groupSlug": "bun"
+    }
+  ]
+}

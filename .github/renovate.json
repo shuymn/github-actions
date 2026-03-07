@@ -1,0 +1,6 @@
+{
+  "extends": [
+    "github>shuymn/github-actions",
+    "schedule:daily"
+  ]
+}
