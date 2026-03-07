@@ -20,3 +20,8 @@ jobs:
     uses: ./.github/workflows/renovate.yml
     with:
       files: default.json .github/renovate.json
+
+  security:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/security.yml
