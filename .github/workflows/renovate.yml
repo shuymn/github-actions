@@ -6,7 +6,7 @@ on:
       files:
         description: Space-separated list of Renovate config files to validate
         type: string
-        default: default.json .github/renovate.json
+        default: .github/renovate.json
 
 jobs:
   validate:
