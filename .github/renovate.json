@@ -2,5 +2,23 @@
   "extends": [
     "github>shuymn/github-actions",
     "schedule:daily"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update ACTIONLINT_VERSION in Makefile and gha.yml",
+      "managerFilePatterns": ["Makefile", ".github/workflows/gha.yml"],
+      "matchStrings": ["ACTIONLINT_VERSION\\s*(?::=|:)\\s*(?<currentValue>v[^\\s\"\\n]+)"],
+      "depNameTemplate": "rhysd/actionlint",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update GHALINT_VERSION in Makefile and gha.yml",
+      "managerFilePatterns": ["Makefile", ".github/workflows/gha.yml"],
+      "matchStrings": ["GHALINT_VERSION\\s*(?::=|:)\\s*(?<currentValue>v[^\\s\"\\n]+)"],
+      "depNameTemplate": "suzuki-shunsuke/ghalint",
+      "datasourceTemplate": "github-releases"
+    }
   ]
 }
