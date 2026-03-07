@@ -38,6 +38,7 @@ jobs:
       - name: Download ghalint
         env:
           GHALINT_VERSION: v1.5.5
+          GH_TOKEN: ${{ github.token }}
         run: |
           asset="ghalint_${GHALINT_VERSION#v}_linux_amd64.tar.gz"
 
