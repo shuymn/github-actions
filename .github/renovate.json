@@ -1,6 +1,6 @@
 {
   "extends": [
-    "github>shuymn/github-actions",
+    "github>shuymn/github-actions#main",
     "schedule:daily"
   ],
   "customManagers": [
