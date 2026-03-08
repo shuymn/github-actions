@@ -11,11 +11,14 @@ ARCH    := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 ACTIONLINT := $(BIN_DIR)/actionlint
 GHALINT    := $(BIN_DIR)/ghalint
 
-.PHONY: lint lint-actionlint lint-ghalint lint-renovate clean
+.PHONY: generate lint lint-actionlint lint-ghalint lint-renovate clean
+
+generate:
+	bash scripts/generate-hashes.sh
 
 lint: lint-actionlint lint-ghalint lint-renovate
-	shfmt -w setup.sh scripts/sync-actions-settings.sh scripts/place-template-files.sh
-	shellcheck -o all setup.sh scripts/sync-actions-settings.sh scripts/place-template-files.sh
+	shfmt -w setup.sh scripts/sync-actions-settings.sh scripts/place-template-files.sh scripts/generate-hashes.sh
+	shellcheck -o all setup.sh scripts/sync-actions-settings.sh scripts/place-template-files.sh scripts/generate-hashes.sh
 
 lint-actionlint: $(BIN_DIR)/.actionlint-$(ACTIONLINT_VERSION)
 	$(ACTIONLINT) -color

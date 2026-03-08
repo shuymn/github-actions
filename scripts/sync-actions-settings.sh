@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export GH_PAGER=""
+
 missing=()
 for cmd in gh git jq yq; do
   command -v "${cmd}" >/dev/null 2>&1 || missing+=("${cmd}")
@@ -128,7 +130,7 @@ already_configured() {
   perms=$(gh api "repos/${TARGET}/actions/permissions" 2>/dev/null) || return 1
   current_selected=$(gh api "repos/${TARGET}/actions/permissions/selected-actions" 2>/dev/null) || return 1
 
-  jq -e \
+  jq -ne \
     --argjson required "${required_patterns}" \
     --argjson perms "${perms}" \
     --argjson current "${current_selected}" '
