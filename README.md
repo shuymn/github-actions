@@ -13,14 +13,24 @@ Configure a repository or organization for use with this project.
 > This script modifies the target's GitHub Actions permission settings and commits files via the GitHub API.
 
 - Configure allowed GitHub Actions (SHA pinning required, selected actions only)
-- Place workflow files (`.github/workflows/gha.yml`, `renovate.yml`, `security.yml`) with refs pinned to the current commit
-- Place `.github/renovate.json`
+- Place workflow files (`.github/workflows/gha.yml`, `renovate.yml`, `security.yml`) with refs pinned to the current commit when they do not already exist
+- Place `.github/renovate.json` when it does not already exist
 
 **Requirements:** `bash`, `curl`, `gh`, `jq`, `yq`
 
 ```bash
 curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shuymn/github-actions/main/setup.sh | bash
 ```
+
+```bash
+curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shuymn/github-actions/main/setup.sh | bash -s -- [OPTIONS] [OWNER/REPO|ORG]
+```
+
+Available options:
+
+- `--skip-actions-settings`: Skip GitHub Actions permission settings
+- `--overwrite-workflows`: Overwrite existing workflow files
+- `--overwrite-renovate`: Overwrite an existing `.github/renovate.json`
 
 ## Composite Actions
 
