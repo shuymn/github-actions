@@ -7,27 +7,24 @@ Personal collection of reusable GitHub Actions workflows and shared [Renovate](h
 
 ## Setup
 
-Configure a repository or organization for use with this project.
+Configure a repository for use with this project. Run it from the target repository root so local workflow changes can be reflected in GitHub Actions settings before push.
 
 > [!WARNING]
-> This script modifies the target's GitHub Actions permission settings and commits files via the GitHub API.
+> It modifies the target repository's GitHub Actions permission settings via the GitHub API and writes workflow files locally in your working tree.
 
 - Configure allowed GitHub Actions (SHA pinning required, selected actions only)
 - Place workflow files (`.github/workflows/gha.yml`, `renovate.yml`, `security.yml`) with refs pinned to the current commit when they do not already exist
 - Place `.github/renovate.json` when it does not already exist
 
-**Requirements:** `bash`, `curl`, `gh`, `jq`, `yq`
+**Requirements:** `gh`, `jq`, `yq`
 
 ```bash
-curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shuymn/github-actions/main/setup.sh | bash
-```
-
-```bash
-curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shuymn/github-actions/main/setup.sh | bash -s -- [OPTIONS] [OWNER/REPO|ORG]
+curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shuymn/github-actions/main/setup.sh | bash -s -- [OPTIONS]
 ```
 
 Available options:
 
+- `--only-actions-settings`: Run only GitHub Actions permission settings sync
 - `--skip-actions-settings`: Skip GitHub Actions permission settings
 - `--overwrite-workflows`: Overwrite existing workflow files
 - `--overwrite-renovate`: Overwrite an existing `.github/renovate.json`

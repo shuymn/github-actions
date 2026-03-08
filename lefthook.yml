@@ -13,9 +13,6 @@ pre-commit:
   piped: true
 
   commands:
-    generate:
-      run: make generate
-      stage_fixed: true
     lint:
       run: make lint
       stage_fixed: true
