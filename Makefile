@@ -15,7 +15,7 @@ GHALINT    := $(BIN_DIR)/ghalint
 
 lint: lint-actionlint lint-ghalint lint-renovate
 	shfmt -w setup.sh
-	shellcheck setup.sh
+	shellcheck -o all setup.sh
 
 lint-actionlint: $(BIN_DIR)/.actionlint-$(ACTIONLINT_VERSION)
 	$(ACTIONLINT) -color
