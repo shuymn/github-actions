@@ -9,20 +9,28 @@ jobs:
       contents: read
     runs-on: ubuntu-slim
     timeout-minutes: 5
+    env:
+      ACTIONLINT_VERSION: v1.7.11
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache
+        with:
+          path: /usr/local/bin/actionlint
+          key: actionlint-${{ env.ACTIONLINT_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
       - name: Download actionlint
-        id: get_actionlint
-        env:
-          ACTIONLINT_VERSION: v1.7.11
-        run: bash <(curl "https://raw.githubusercontent.com/rhysd/actionlint/refs/tags/${ACTIONLINT_VERSION:?}/scripts/download-actionlint.bash")
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          bash <(curl "https://raw.githubusercontent.com/rhysd/actionlint/refs/tags/${ACTIONLINT_VERSION:?}/scripts/download-actionlint.bash")
+          cp ./actionlint /usr/local/bin/actionlint
         shell: bash
 
       - name: Run actionlint
-        run: ${{ steps.get_actionlint.outputs.executable }} -color
+        run: actionlint -color
         shell: bash
 
   ghalint:
@@ -30,14 +38,22 @@ jobs:
       contents: read
     runs-on: ubuntu-slim
     timeout-minutes: 5
+    env:
+      GHALINT_VERSION: v1.5.5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache
+        with:
+          path: /usr/local/bin/ghalint
+          key: ghalint-${{ env.GHALINT_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
       - name: Download ghalint
+        if: steps.cache.outputs.cache-hit != 'true'
         env:
-          GHALINT_VERSION: v1.5.5
           GH_TOKEN: ${{ github.token }}
         run: |
           asset="ghalint_${GHALINT_VERSION#v}_linux_amd64.tar.gz"
@@ -50,8 +66,10 @@ jobs:
             -R suzuki-shunsuke/ghalint \
             --signer-workflow suzuki-shunsuke/go-release-workflow/.github/workflows/release.yaml
           tar xvzf "${asset}" ghalint
+
+          cp ./ghalint /usr/local/bin/ghalint
         shell: bash
 
       - name: Run ghalint
-        run: ./ghalint run
+        run: ghalint run
         shell: bash
