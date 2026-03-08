@@ -9,7 +9,7 @@ This change extracts GitHub Actions permission management from `setup.sh` into a
 | Question | Answer or assumption | Finalization trigger | Impact on scope/design | Status |
 | --- | --- | --- | --- | --- |
 | Should the new capability remain internally reusable from `setup.sh`? | Yes. The new script is an internal dependency of `setup.sh`, not a separate user workflow only. | None | The design must preserve `setup.sh` as the entry point for setup while separating policy logic. | resolved |
-| Which files define allowed action usage? | Use the current discovery surface from the target repository working tree: `.github/workflows/*.yml` and `.github/actions/*/action.yml`. | None | The extractor remains compatible with current repository structure and does not broaden scan scope. | resolved |
+| Which files define allowed action usage? | Use the target repository working tree as the entrypoint: `.github/workflows/*.yml` and `.github/actions/*/action.yml`, plus first-hop reusable workflows referenced from those files. | None | The extractor follows template-owned reusable workflows without generalizing to arbitrary multi-hop workflow graphs. | resolved |
 | Should Actions settings be partially merged or fully synchronized? | Synchronize the whole policy shape, including `allowed_actions=selected`, `sha_pinning_required=true`, `github_owned_allowed=true`, `verified_allowed=false`, and exact `patterns_allowed`. | None | The new script must replace append-only behavior with exact-match updates. | resolved |
 | What risk tier applies? | Standard. Change rationale: Not Critical: defects are limited to repository Actions policy setup and are reversible through normal admin actions. / Not Sensitive: there is no hidden state migration, data contract, or multi-system rollback requirement. | None | Standard verification depth is acceptable. | resolved |
 | How should organization targets behave after extraction? | Reject them. The target repository is derived from the current repository root only. | None | The script and `setup.sh` must fail closed before any settings mutation when the current repository cannot be resolved to a GitHub repository. | resolved |
@@ -23,7 +23,8 @@ This change extracts GitHub Actions permission management from `setup.sh` into a
 
 ## Non-Goals
 
-- Supporting workflow discovery outside `.github/workflows/*.yml` and `.github/actions/*/action.yml`.
+- Supporting workflow discovery outside `.github/workflows/*.yml`, `.github/actions/*/action.yml`, and first-hop reusable workflows referenced from them.
+- Recursively resolving second-hop or deeper reusable workflow chains.
 - Introducing backward-compatible merge behavior for `selected-actions`.
 - Changing workflow placement semantics beyond consuming the new internal script.
 - Supporting repositories without sufficient GitHub API access.
@@ -64,8 +65,9 @@ Introduce a new internal shell script dedicated to Actions permission synchroniz
 
 1. Resolve the target repository from the current repository root and fail if it does not map cleanly to a GitHub repository.
 2. Read target-repository working-tree content required to discover action usage from `.github/workflows/*.yml` and `.github/actions/*/action.yml`.
-3. Parse all `uses:` references, normalize them to owner/repo patterns, exclude local actions, `actions/*`, and self-managed references for the target owner resolved dynamically at runtime.
-4. Build the desired selected-actions payload with:
+3. Parse all `uses:` references from those entrypoint files, normalize them to owner/repo patterns, exclude local actions, `actions/*`, and self-managed references for the target owner resolved dynamically at runtime.
+4. When an entrypoint file references a reusable workflow, load that reusable workflow once and include the action patterns used inside it.
+5. Build the desired selected-actions payload with:
    - `github_owned_allowed=true`
    - `verified_allowed=false`
    - `patterns_allowed=<normalized exact set>`
@@ -81,12 +83,12 @@ Add dedicated internal scripts under the repository, owned by setup automation. 
 
 ### Discovery Model
 
-The script will inspect the target repository working-tree paths:
+The script will inspect the target repository working-tree entrypoints:
 
 - `.github/workflows/*.yml`
 - `.github/actions/*/action.yml`
 
-The discovery rules will mirror the existing `make generate` logic:
+The discovery rules will mirror the existing `make generate` logic for direct `uses:` values, then add one reusable-workflow expansion step:
 
 - collect `uses:` values
 - strip refs after `@`
@@ -94,9 +96,10 @@ The discovery rules will mirror the existing `make generate` logic:
 - exclude local references beginning with `.`
 - exclude `actions/*`
 - resolve the target owner dynamically from GitHub metadata and exclude `<target-owner>/*` self-managed references
+- detect first-hop reusable workflow references from the entrypoint files and inspect those referenced workflow files once
 - sort and de-duplicate before submission
 
-The script must treat the locally discovered target-repository set as the complete desired `patterns_allowed` list. If a pattern exists remotely but is absent from discovery, it must be removed on synchronization.
+The script must treat the locally discovered target-repository set, augmented by first-hop reusable workflow expansion, as the complete desired `patterns_allowed` list. If a pattern exists remotely but is absent from discovery, it must be removed on synchronization.
 
 ### API Update Semantics
 
@@ -128,7 +131,8 @@ The script must treat the locally discovered target-repository set as the comple
 ## Acceptance Criteria
 
 - **AC1 / cli-contract / behavioral**: When `setup.sh` runs without `--skip-actions-settings`, the system shall delegate repository Actions permission management to the extracted internal script.
-- **AC2 / cli-contract / behavioral**: When the synchronization script runs for a repository target, the system shall derive the desired allowed action patterns only from `.github/workflows/*.yml` and `.github/actions/*/action.yml` in the target repository working tree.
+- **AC2 / cli-contract / behavioral**: When the synchronization script runs for a repository target, the system shall derive the desired allowed action patterns from `.github/workflows/*.yml` and `.github/actions/*/action.yml` in the target repository working tree, plus first-hop reusable workflows referenced from those files.
+- **AC2a / behavioral**: When an entrypoint workflow references a reusable workflow, the system shall include third-party action patterns used inside that referenced reusable workflow in the desired allowlist.
 - **AC3 / behavioral**: When the remote `selected-actions.patterns_allowed` contains entries not present in the discovered desired set, the system shall remove those entries by updating GitHub with the exact desired payload instead of merging.
 - **AC4 / cli-contract / behavioral**: When `setup.sh` runs with `--skip-actions-settings`, the system shall not invoke the extracted synchronization script and shall continue remaining setup behavior unchanged.
 - **AC5 / api-contract / behavioral**: When the synchronization script updates repository Actions settings, the system shall set `enabled=true`, `allowed_actions=selected`, `sha_pinning_required=true`, `github_owned_allowed=true`, and `verified_allowed=false` in the resulting GitHub configuration.

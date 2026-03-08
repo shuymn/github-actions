@@ -82,45 +82,140 @@ ensure_safe_repo_path() {
   done
 }
 
+append_unique_line() {
+  local file="$1" line="$2"
+  [[ -n "${line}" ]] || return 0
+  if [[ ! -f "${file}" ]] || ! grep -Fqx -- "${line}" "${file}"; then
+    printf '%s\n' "${line}" >>"${file}"
+  fi
+}
+
+extract_uses_from_yaml() {
+  local file="$1"
+  yq -r '[.. | select(has("uses")) | .uses] | .[]' "${file}" 2>/dev/null | grep -v '^---$' || true
+}
+
+normalize_pattern() {
+  local uses="$1" owner="$2"
+  local normalized
+
+  normalized=$(printf '%s\n' "${uses}" | sed 's|@.*||; s|^\([^/]*/[^/]*\)/.*|\1|')
+  if [[ -z "${normalized}" || "${normalized}" == .* || "${normalized}" == actions/* || "${normalized}" == "${owner}/"* ]]; then
+    return 0
+  fi
+
+  printf '%s\n' "${normalized}"
+}
+
+collect_patterns_from_yaml() {
+  local file="$1" owner="$2" patterns_file="$3"
+  local uses_lines use pattern
+
+  uses_lines=$(extract_uses_from_yaml "${file}")
+  [[ -n "${uses_lines}" ]] || return 0
+
+  while IFS= read -r use; do
+    [[ -n "${use}" ]] || continue
+    pattern=$(normalize_pattern "${use}" "${owner}")
+    if [[ -n "${pattern}" ]]; then
+      append_unique_line "${patterns_file}" "${pattern}"
+    fi
+  done <<<"${uses_lines}"
+}
+
+record_reusable_workflow_refs() {
+  local file="$1" reusable_file="$2"
+  local uses_lines use
+
+  uses_lines=$(extract_uses_from_yaml "${file}")
+  [[ -n "${uses_lines}" ]] || return 0
+
+  while IFS= read -r use; do
+    [[ -n "${use}" ]] || continue
+
+    if [[ "${use}" =~ ^\./(\.github/workflows/[^@]+\.ya?ml)$ ]]; then
+      append_unique_line "${reusable_file}" "local:${REPO_ROOT}/${BASH_REMATCH[1]}"
+      continue
+    fi
+
+    if [[ "${use}" =~ ^([^/]+/[^/]+)/(\.github/workflows/[^@]+\.ya?ml)@(.+)$ ]]; then
+      append_unique_line "${reusable_file}" "remote:${BASH_REMATCH[1]}:${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
+    fi
+  done <<<"${uses_lines}"
+}
+
+fetch_remote_workflow() {
+  local repo="$1" path="$2" ref="$3" output="$4"
+  gh api -H "Accept: application/vnd.github.raw" "repos/${repo}/contents/${path}?ref=${ref}" >"${output}"
+}
+
 build_patterns_json() {
   local root="$1" owner="$2"
-  local -a files=()
-  local raw_lines=""
-  local patterns=""
+  (
+    local -a files=()
+    local tmpdir reusable_workflows_file patterns_file
+    local entry kind location repo path ref
 
-  ensure_safe_repo_path "${REPO_ROOT}/.github"
-  ensure_safe_repo_path "${root}"
-  ensure_safe_repo_path "${REPO_ROOT}/.github/actions"
+    ensure_safe_repo_path "${REPO_ROOT}/.github"
+    ensure_safe_repo_path "${root}"
+    ensure_safe_repo_path "${REPO_ROOT}/.github/actions"
 
-  if compgen -G "${root}/workflows/*.yml" >/dev/null; then
-    while IFS= read -r file; do
-      ensure_safe_repo_path "${file}"
-      files+=("${file}")
-    done < <(printf '%s\n' "${root}"/workflows/*.yml | sort || true)
-  fi
+    tmpdir=$(mktemp -d)
+    trap 'rm -rf "${tmpdir}"' EXIT
+    reusable_workflows_file="${tmpdir}/reusable-workflows.txt"
+    patterns_file="${tmpdir}/patterns.txt"
 
-  if compgen -G "${root}/actions/*/action.yml" >/dev/null; then
-    while IFS= read -r file; do
-      ensure_safe_repo_path "${file}"
-      files+=("${file}")
-    done < <(printf '%s\n' "${root}"/actions/*/action.yml | sort || true)
-  fi
+    if compgen -G "${root}/workflows/*.yml" >/dev/null; then
+      while IFS= read -r file; do
+        ensure_safe_repo_path "${file}"
+        files+=("${file}")
+      done < <(printf '%s\n' "${root}"/workflows/*.yml | sort || true)
+    fi
 
-  if [[ ${#files[@]} -gt 0 ]]; then
-    raw_lines=$(yq '[.. | select(has("uses")) | .uses] | .[]' "${files[@]}" 2>/dev/null | grep -v '^---$' || true)
-  fi
+    if compgen -G "${root}/actions/*/action.yml" >/dev/null; then
+      while IFS= read -r file; do
+        ensure_safe_repo_path "${file}"
+        files+=("${file}")
+      done < <(printf '%s\n' "${root}"/actions/*/action.yml | sort || true)
+    fi
 
-  if [[ -n "${raw_lines}" ]]; then
-    patterns=$(printf '%s\n' "${raw_lines}" |
-      sed 's|@.*||; s|^\([^/]*/[^/]*\)/.*|\1|' |
-      grep -vE '^(\.|actions/)' |
-      grep -vE "^${owner}/" |
-      sort -u || true)
-  fi
+    if [[ ${#files[@]} -gt 0 ]]; then
+      for file in "${files[@]}"; do
+        collect_patterns_from_yaml "${file}" "${owner}" "${patterns_file}"
+        record_reusable_workflow_refs "${file}" "${reusable_workflows_file}"
+      done
+    fi
 
-  jq -nRc '
-    [inputs | select(length > 0) | . + "@*"]
-  ' <<<"${patterns}"
+    if [[ -f "${reusable_workflows_file}" ]]; then
+      while IFS= read -r entry; do
+        [[ -n "${entry}" ]] || continue
+        kind="${entry%%:*}"
+        location="${entry#*:}"
+
+        case "${kind}" in
+        local)
+          ensure_safe_repo_path "${location}"
+          if [[ -f "${location}" ]]; then
+            collect_patterns_from_yaml "${location}" "${owner}" "${patterns_file}"
+          fi
+          ;;
+        remote)
+          repo="${location%%:*}"
+          location="${location#*:}"
+          path="${location%%:*}"
+          ref="${location#*:}"
+          fetch_remote_workflow "${repo}" "${path}" "${ref}" "${tmpdir}/remote-workflow.yml"
+          collect_patterns_from_yaml "${tmpdir}/remote-workflow.yml" "${owner}" "${patterns_file}"
+          ;;
+        *) ;;
+        esac
+      done <"${reusable_workflows_file}"
+    fi
+
+    sort -u "${patterns_file}" 2>/dev/null | jq -nRc '
+      [inputs | select(length > 0) | . + "@*"]
+    '
+  )
 }
 
 already_configured() {
