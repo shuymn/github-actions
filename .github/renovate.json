@@ -27,6 +27,14 @@
       "matchStrings": ["RENOVATE_VERSION\\s*(?::=|:)\\s+\"?(?<currentValue>[^\\s\"\\n]+)\"?"],
       "depNameTemplate": "renovate",
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": "Update TASK_VERSION in setup-task action",
+      "managerFilePatterns": [".github/actions/setup-task/action.yml"],
+      "matchStrings": ["TASK_VERSION:\\s+(?<currentValue>v[^\\s\"\\n]+)"],
+      "depNameTemplate": "go-task/task",
+      "datasourceTemplate": "github-releases"
     }
   ]
 }
