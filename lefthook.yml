@@ -1,14 +1,26 @@
-colors: true
-no_tty: false
+assert_lefthook_installed: true
+glob_matcher: doublestar
+no_tty: true
+skip_lfs: true
+
+output:
+  - summary
+  - failure
+  - execution
+  - execution_out
 
 pre-commit:
-  parallel: true
+  piped: true
 
   commands:
+    generate:
+      run: make generate
+      stage_fixed: true
     lint:
       run: make lint
+      stage_fixed: true
     gitleaks:
-      run: gitleaks protect --staged
+      run: gitleaks git --pre-commit --staged --redact --no-banner --verbose
 
   skip:
     - merge: true
