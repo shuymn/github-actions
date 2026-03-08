@@ -1,0 +1,34 @@
+name: Setup Task
+description: Install go-task/task with caching
+
+inputs:
+  version:
+    description: Task version to install
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Set task version
+      id: version
+      env:
+        TASK_VERSION: v3.49.0
+        INPUT_VERSION: ${{ inputs.version }}
+      run: echo "value=${INPUT_VERSION:-$TASK_VERSION}" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      id: cache
+      with:
+        path: /usr/local/bin/task
+        key: task-${{ steps.version.outputs.value }}-${{ runner.os }}-${{ runner.arch }}
+
+    - name: Install task
+      if: steps.cache.outputs.cache-hit != 'true'
+      env:
+        TASK_VERSION: ${{ steps.version.outputs.value }}
+      run: |
+        curl -fsSL --proto '=https' --tlsv1.2 \
+          "https://raw.githubusercontent.com/go-task/task/refs/tags/${TASK_VERSION}/install-task.sh" \
+          | bash -s -- -b /usr/local/bin "${TASK_VERSION}"
+      shell: bash
