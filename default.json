@@ -3,7 +3,7 @@
   "extends": [
     "config:best-practices",
     ":timezone(Asia/Tokyo)",
-    "schedule:weekends"
+    "schedule:nonOfficeHours"
   ],
   "labels": [
     "dependencies"
