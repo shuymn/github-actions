@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 ACTIONLINT_VERSION := v1.7.11
 GHALINT_VERSION    := v1.5.5
-RENOVATE_VERSION   := 43.56.0
+RENOVATE_VERSION   := 43.91.6
 
 BIN_DIR := bin
 OS      := $(shell uname -s | tr '[:upper:]' '[:lower:]')
