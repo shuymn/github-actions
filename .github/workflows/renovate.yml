@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: read
     env:
-      RENOVATE_VERSION: "43.123.3"
+      RENOVATE_VERSION: "43.123.8"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
