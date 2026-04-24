@@ -36,6 +36,7 @@ lint-actionlint: $(BIN_DIR)/.actionlint-$(ACTIONLINT_VERSION)
 lint-ghalint: $(BIN_DIR)/.ghalint-$(GHALINT_VERSION)
 	$(GHALINT) run
 
+lint-renovate: export BUN_CONFIG_REGISTRY = https://npm.flatt.tech/
 lint-renovate:
 	bunx --package=renovate@$(RENOVATE_VERSION) renovate-config-validator --strict default.json .github/renovate.json
 
