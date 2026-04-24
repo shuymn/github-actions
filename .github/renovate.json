@@ -29,6 +29,30 @@
     },
     {
       "customType": "regex",
+      "description": "Update SHFMT_VERSION in Makefile",
+      "managerFilePatterns": ["Makefile"],
+      "matchStrings": ["SHFMT_VERSION\\s*(?::=|:)\\s+(?<currentValue>v[^\\s\"\\n]+)"],
+      "depNameTemplate": "mvdan/sh",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update SHELLCHECK_VERSION in Makefile",
+      "managerFilePatterns": ["Makefile"],
+      "matchStrings": ["SHELLCHECK_VERSION\\s*(?::=|:)\\s+(?<currentValue>v[^\\s\"\\n]+)"],
+      "depNameTemplate": "koalaman/shellcheck",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update BETTERLEAKS_VERSION in security.yml",
+      "managerFilePatterns": [".github/workflows/security.yml"],
+      "matchStrings": ["BETTERLEAKS_VERSION:\\s+(?<currentValue>v[^\\s\"\\n]+)"],
+      "depNameTemplate": "betterleaks/betterleaks",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "description": "Update TASK_VERSION in setup-task action",
       "managerFilePatterns": [".github/actions/setup-task/action.yml"],
       "matchStrings": ["TASK_VERSION:\\s+(?<currentValue>v[^\\s\"\\n]+)"],
