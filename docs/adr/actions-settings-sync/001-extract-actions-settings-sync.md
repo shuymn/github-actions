@@ -14,7 +14,7 @@ The current updater also merges missing `patterns_allowed` entries into the exis
 Extract GitHub Actions permission synchronization into an internal reusable script that:
 
 - is invoked by `setup.sh`
-- computes desired allowed action patterns from the target repository's local workflow and composite action files, plus first-hop reusable workflows referenced from those files
+- computes desired allowed action patterns from the target repository's local workflow and composite action files, plus reusable workflows recursively referenced from those files
 - resolves the target repository from the target working tree and excludes self-managed references without hardcoding a specific owner
 - updates GitHub Actions settings to match the computed desired state exactly
 
@@ -24,6 +24,6 @@ Extract GitHub Actions permission synchronization into an internal reusable scri
 
 - The setup flow becomes easier to maintain because Actions policy logic is isolated from file placement.
 - Repositories configured by the script can converge on an exact allowlist based on unpublished target-repository changes instead of waiting for remote state to catch up.
-- Template-owned reusable workflows contribute their internal third-party actions to the computed allowlist without introducing deeper workflow-graph traversal.
+- Reusable workflows contribute their internal third-party actions to the computed allowlist recursively, while already-processed references prevent cycles from looping indefinitely.
 - The implementation must fail closed for non-repository targets before any GitHub settings mutation.
 - `templates/allowed-actions.yml` and `make generate` should be removed so the repository no longer carries a second policy derivation path.

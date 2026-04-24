@@ -11,5 +11,4 @@ jobs:
   security:
     permissions:
       contents: read
-      pull-requests: write
     uses: shuymn/github-actions/.github/workflows/security.yml@main

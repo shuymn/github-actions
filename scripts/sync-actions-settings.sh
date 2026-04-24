@@ -124,7 +124,7 @@ collect_patterns_from_yaml() {
 }
 
 record_reusable_workflow_refs() {
-  local file="$1" reusable_file="$2"
+  local file="$1" reusable_file="$2" source_repo="${3:-}" source_ref="${4:-}"
   local uses_lines use
 
   uses_lines=$(extract_uses_from_yaml "${file}")
@@ -134,7 +134,11 @@ record_reusable_workflow_refs() {
     [[ -n "${use}" ]] || continue
 
     if [[ "${use}" =~ ^\./(\.github/workflows/[^@]+\.ya?ml)$ ]]; then
-      append_unique_line "${reusable_file}" "local:${REPO_ROOT}/${BASH_REMATCH[1]}"
+      if [[ -n "${source_repo}" && -n "${source_ref}" ]]; then
+        append_unique_line "${reusable_file}" "remote:${source_repo}:${BASH_REMATCH[1]}:${source_ref}"
+      else
+        append_unique_line "${reusable_file}" "local:${REPO_ROOT}/${BASH_REMATCH[1]}"
+      fi
       continue
     fi
 
@@ -149,12 +153,59 @@ fetch_remote_workflow() {
   gh api -H "Accept: application/vnd.github.raw" "repos/${repo}/contents/${path}?ref=${ref}" >"${output}"
 }
 
+process_reusable_workflow_queue() {
+  local queue_file="$1" processed_file="$2" patterns_file="$3" owner="$4" tmpdir="$5"
+  local index entry kind location repo path ref workflow_file fetch_rc
+
+  index=1
+  while true; do
+    entry=$(sed -n "${index}p" "${queue_file}" 2>/dev/null || true)
+    [[ -n "${entry}" ]] || break
+    index=$((index + 1))
+
+    if grep -Fqx -- "${entry}" "${processed_file}" 2>/dev/null; then
+      continue
+    fi
+    append_unique_line "${processed_file}" "${entry}"
+
+    kind="${entry%%:*}"
+    location="${entry#*:}"
+
+    case "${kind}" in
+    local)
+      ensure_safe_repo_path "${location}"
+      if [[ -f "${location}" ]]; then
+        collect_patterns_from_yaml "${location}" "${owner}" "${patterns_file}"
+        record_reusable_workflow_refs "${location}" "${queue_file}"
+      fi
+      ;;
+    remote)
+      repo="${location%%:*}"
+      location="${location#*:}"
+      path="${location%%:*}"
+      ref="${location#*:}"
+      workflow_file="${tmpdir}/remote-workflow-${index}.yml"
+      set +e
+      fetch_remote_workflow "${repo}" "${path}" "${ref}" "${workflow_file}"
+      fetch_rc=$?
+      set -e
+      if [[ ${fetch_rc} -ne 0 ]]; then
+        echo "Warning: failed to fetch ${repo}/${path}@${ref}, skipping." >&2
+        continue
+      fi
+      collect_patterns_from_yaml "${workflow_file}" "${owner}" "${patterns_file}"
+      record_reusable_workflow_refs "${workflow_file}" "${queue_file}" "${repo}" "${ref}"
+      ;;
+    *) ;;
+    esac
+  done
+}
+
 build_patterns_json() {
   local root="$1" owner="$2"
   (
     local -a files=()
-    local tmpdir reusable_workflows_file patterns_file
-    local entry kind location repo path ref
+    local tmpdir reusable_workflows_file processed_reusable_workflows_file patterns_file
 
     ensure_safe_repo_path "${REPO_ROOT}/.github"
     ensure_safe_repo_path "${root}"
@@ -163,6 +214,7 @@ build_patterns_json() {
     tmpdir=$(mktemp -d)
     trap 'rm -rf "${tmpdir}"' EXIT
     reusable_workflows_file="${tmpdir}/reusable-workflows.txt"
+    processed_reusable_workflows_file="${tmpdir}/processed-reusable-workflows.txt"
     patterns_file="${tmpdir}/patterns.txt"
 
     if compgen -G "${root}/workflows/*.yml" >/dev/null; then
@@ -187,29 +239,12 @@ build_patterns_json() {
     fi
 
     if [[ -f "${reusable_workflows_file}" ]]; then
-      while IFS= read -r entry; do
-        [[ -n "${entry}" ]] || continue
-        kind="${entry%%:*}"
-        location="${entry#*:}"
-
-        case "${kind}" in
-        local)
-          ensure_safe_repo_path "${location}"
-          if [[ -f "${location}" ]]; then
-            collect_patterns_from_yaml "${location}" "${owner}" "${patterns_file}"
-          fi
-          ;;
-        remote)
-          repo="${location%%:*}"
-          location="${location#*:}"
-          path="${location%%:*}"
-          ref="${location#*:}"
-          fetch_remote_workflow "${repo}" "${path}" "${ref}" "${tmpdir}/remote-workflow.yml"
-          collect_patterns_from_yaml "${tmpdir}/remote-workflow.yml" "${owner}" "${patterns_file}"
-          ;;
-        *) ;;
-        esac
-      done <"${reusable_workflows_file}"
+      process_reusable_workflow_queue \
+        "${reusable_workflows_file}" \
+        "${processed_reusable_workflows_file}" \
+        "${patterns_file}" \
+        "${owner}" \
+        "${tmpdir}"
     fi
 
     sort -u "${patterns_file}" 2>/dev/null | jq -nRc '
