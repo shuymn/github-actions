@@ -12,7 +12,7 @@ runs:
     - name: Set task version
       id: version
       env:
-        TASK_VERSION: v3.49.1
+        TASK_VERSION: v3.50.0
         INPUT_VERSION: ${{ inputs.version }}
       run: echo "value=${INPUT_VERSION:-$TASK_VERSION}" >> "$GITHUB_OUTPUT"
       shell: bash
