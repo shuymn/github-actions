@@ -4,18 +4,44 @@ on:
   workflow_call:
 
 jobs:
-  gitleaks:
+  betterleaks:
     permissions:
       contents: read
-      pull-requests: write
     runs-on: ubuntu-slim
     timeout-minutes: 5
+    env:
+      BETTERLEAKS_VERSION: v1.1.2
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        id: cache
+        with:
+          path: /usr/local/bin/betterleaks
+          key: betterleaks-${{ env.BETTERLEAKS_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Install betterleaks
+        if: steps.cache.outputs.cache-hit != 'true'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITLEAKS_NOTIFY_USER_LIST: "@shuymn"
+          GH_TOKEN: ${{ github.token }}
+          RUNNER_ARCH: ${{ runner.arch }}
+        run: |
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "${tmpdir}"' EXIT
+          arch=$(printf '%s' "${RUNNER_ARCH}" | tr '[:upper:]' '[:lower:]')
+          asset="betterleaks_${BETTERLEAKS_VERSION#v}_linux_${arch}.tar.gz"
+
+          gh release download "${BETTERLEAKS_VERSION:?}" \
+            -R betterleaks/betterleaks \
+            -p "${asset}" \
+            -D "${tmpdir}"
+          tar xzf "${tmpdir}/${asset}" -C "${tmpdir}" betterleaks
+          cp "${tmpdir}/betterleaks" /usr/local/bin/betterleaks
+        shell: bash
+
+      - name: Run betterleaks
+        run: betterleaks git --redact --no-banner --verbose --validation=false --platform github
+        shell: bash

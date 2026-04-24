@@ -18,9 +18,8 @@ pre-commit:
       glob: "scripts/{place-template-files,sync-actions-settings}.sh"
     lint:
       run: make lint
-      stage_fixed: true
-    gitleaks:
-      run: gitleaks git --pre-commit --staged --redact --no-banner --verbose
+    betterleaks:
+      run: betterleaks git --pre-commit --staged --redact --no-banner --verbose
 
   skip:
     - merge: true
