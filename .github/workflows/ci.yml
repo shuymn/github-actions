@@ -9,6 +9,33 @@ on:
       - main
 
 jobs:
+  lint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: bin
+          key: shell-linters-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
+
+      - name: Check generated setup.sh
+        run: |
+          make generate
+          git diff --no-patch --exit-code setup.sh
+        shell: bash
+
+      - name: Run shell linters
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: make lint-shfmt lint-shellcheck
+        shell: bash
+
   gha:
     permissions:
       contents: read
