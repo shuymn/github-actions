@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: read
     env:
-      RENOVATE_VERSION: "43.139.7"
+      RENOVATE_VERSION: "43.139.8"
       BUN_CONFIG_REGISTRY: "https://npm.flatt.tech/"
     runs-on: ubuntu-latest
     timeout-minutes: 5
