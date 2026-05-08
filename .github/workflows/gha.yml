@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     env:
-      GHALINT_VERSION: v1.5.5
+      GHALINT_VERSION: v1.5.6
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
