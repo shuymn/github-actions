@@ -92,7 +92,7 @@ append_unique_line() {
 
 extract_uses_from_yaml() {
   local file="$1"
-  yq -r '[.. | select(has("uses")) | .uses] | .[]' "${file}" 2>/dev/null | grep -v '^---$' || true
+  yq -r '[.. | select(type == "object" and has("uses")) | .uses] | .[]' "${file}" 2>/dev/null | grep -v '^---$' || true
 }
 
 normalize_pattern() {
