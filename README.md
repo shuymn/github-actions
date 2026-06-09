@@ -19,7 +19,7 @@ Configure a repository for use with this project. Run it from the target reposit
 **Requirements:** `gh`, `jq`, `yq`
 
 ```bash
-curl -fsSL --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shuymn/github-actions/main/setup.sh | bash -s -- [OPTIONS]
+gh api -H "Accept: application/vnd.github.raw" "repos/shuymn/github-actions/contents/setup.sh?ref=main" | bash -s -- [OPTIONS]
 ```
 
 Available options:
