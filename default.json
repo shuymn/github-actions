@@ -17,10 +17,12 @@
     "automerge": true
   },
   "prHourlyLimit": 0,
-  "minimumReleaseAge": "7 days",
+  "minimumReleaseAge": "3 days",
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
+  "prCreation": "not-pending",
+  "internalChecksFilter": "strict",
   "internalChecksAsSuccess": true,
   "reviewersFromCodeOwners": true,
-  "assignAutomerge": true,
   "packageRules": [
     {
       "description": "Automerge minor/patch updates for non-major versions",
