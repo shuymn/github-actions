@@ -2,8 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:best-practices",
-    ":timezone(Asia/Tokyo)",
-    "schedule:nonOfficeHours"
+    ":timezone(Asia/Tokyo)"
   ],
   "labels": [
     "dependencies"
