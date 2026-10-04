@@ -154,7 +154,7 @@ place_file() {
   content=$(load_source_file "${path}")
   if [[ "${pin}" == true ]]; then
     content=$(printf '%s' "${content}" |
-      sed "s|shuymn/github-actions/.github/workflows/\([^@]*\)@main|shuymn/github-actions/.github/workflows/\1@${PROVIDER_REF}|g")
+      sed "s|shuymn/github-actions/.github/workflows/\([^@]*\)@main|shuymn/github-actions/.github/workflows/\1@${PROVIDER_REF} # main|g")
   fi
 
   tmp_path=$(mktemp "${dest_dir}/.$(basename "${dest_path}").tmp.XXXXXX")
