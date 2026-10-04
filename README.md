@@ -44,5 +44,5 @@ Install [go-task/task](https://github.com/go-task/task) with caching.
 Generate a SHA-pinned snippet and copy to clipboard:
 
 ```bash
-yq -n '.[0].uses = "shuymn/github-actions/.github/actions/setup-task@'"$(gh api repos/shuymn/github-actions/commits/main -q .sha)"'"' | tee /dev/stderr | pbcopy
+printf -- '- uses: shuymn/github-actions/.github/actions/setup-task@%s # main\n' "$(gh api repos/shuymn/github-actions/commits/main -q .sha)" | tee /dev/stderr | pbcopy
 ```
