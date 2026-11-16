@@ -24,8 +24,20 @@ jobs:
 
       - name: Download actionlint
         if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          bash <(curl "https://raw.githubusercontent.com/rhysd/actionlint/refs/tags/${ACTIONLINT_VERSION:?}/scripts/download-actionlint.bash")
+          asset="actionlint_${ACTIONLINT_VERSION#v}_linux_amd64.tar.gz"
+
+          gh release download "${ACTIONLINT_VERSION:?}" \
+            -R rhysd/actionlint \
+            -p "${asset}"
+
+          gh attestation verify "${asset}" \
+            -R rhysd/actionlint \
+            --signer-workflow rhysd/actionlint/.github/workflows/release.yaml
+          tar xvzf "${asset}" actionlint
+
           cp ./actionlint /usr/local/bin/actionlint
         shell: bash
 
