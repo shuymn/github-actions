@@ -48,7 +48,16 @@ lint-shellcheck: $(BIN_DIR)/.shellcheck-$(SHELLCHECK_VERSION)
 
 $(BIN_DIR)/.actionlint-$(ACTIONLINT_VERSION): | $(BIN_DIR)
 	@rm -f $(ACTIONLINT) $(BIN_DIR)/.actionlint-*
-	cd $(BIN_DIR) && bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/refs/tags/$(ACTIONLINT_VERSION)/scripts/download-actionlint.bash)
+	@asset="actionlint_$(ACTIONLINT_VERSION:v%=%)_$(OS)_$(ARCH).tar.gz"; \
+	gh release download "$(ACTIONLINT_VERSION)" \
+	  -R rhysd/actionlint \
+	  -p "$$asset" \
+	  -D $(BIN_DIR) --clobber && \
+	gh attestation verify "$(BIN_DIR)/$$asset" \
+	  -R rhysd/actionlint \
+	  --signer-workflow rhysd/actionlint/.github/workflows/release.yaml && \
+	tar xzf "$(BIN_DIR)/$$asset" -C $(BIN_DIR) actionlint && \
+	rm "$(BIN_DIR)/$$asset"
 	@touch $@
 
 $(BIN_DIR)/.ghalint-$(GHALINT_VERSION): | $(BIN_DIR)
