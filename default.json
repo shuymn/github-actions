@@ -36,7 +36,7 @@
       "automerge": true
     },
     {
-      "description": "Automerge digest updates for selected GitHub Actions",
+      "description": "Automerge digest updates for selected GitHub Actions. Open the PR at once: the branch gets no checks before a PR exists, and the digest moves before prNotPendingHours elapses, so not-pending never creates one.",
       "matchManagers": [
         "github-actions"
       ],
@@ -47,6 +47,7 @@
         "digest"
       ],
       "minimumReleaseAge": null,
+      "prCreation": "immediate",
       "automerge": true
     },
     {
