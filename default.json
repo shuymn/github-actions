@@ -36,7 +36,7 @@
       "automerge": true
     },
     {
-      "description": "Automerge digest updates for selected GitHub Actions",
+      "description": "Automerge digest updates for selected GitHub Actions. Open the PR at once: the branch gets no checks before a PR exists, and while the digest keeps moving, not-pending delays the PR indefinitely. Renovate merges it itself once every check run and status succeeds, required or not, since callers do not require all of the shared checks.",
       "matchManagers": [
         "github-actions"
       ],
@@ -47,7 +47,9 @@
         "digest"
       ],
       "minimumReleaseAge": null,
-      "automerge": true
+      "prCreation": "immediate",
+      "automerge": true,
+      "platformAutomerge": false
     },
     {
       "description": "Group .bun-version updates",
