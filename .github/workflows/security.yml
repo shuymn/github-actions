@@ -42,6 +42,12 @@ jobs:
           cp "${tmpdir}/betterleaks" /usr/local/bin/betterleaks
         shell: bash
 
+      # Since v1.10.0, betterleaks reads the repository's .betterleaks.toml only when told to.
       - name: Run betterleaks
-        run: betterleaks git --redact --no-banner --verbose --validation=false --platform github
+        run: |
+          args=(--redact --no-banner --verbose --validation=false --platform github)
+          if [[ -f .betterleaks.toml ]]; then
+            args+=(--config .betterleaks.toml)
+          fi
+          betterleaks git "${args[@]}"
         shell: bash
